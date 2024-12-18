@@ -11,3 +11,7 @@ class ConversationNotExistsError(BaseServiceError):
 
 class ConversationCompletedError(Exception):
     pass
+
+
+class InvalidConversationIDError(BaseServiceError):
+    pass

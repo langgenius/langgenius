@@ -2,9 +2,10 @@ import json
 import logging
 from collections.abc import Generator
 from datetime import UTC, datetime
+from os import getenv
 from typing import Optional, Union
 
-from sqlalchemy import and_
+from sqlalchemy import and_, exc
 
 from core.app.app_config.entities import EasyUIBasedAppModelConfigFrom
 from core.app.apps.base_app_generator import BaseAppGenerator
@@ -30,12 +31,20 @@ from models import Account
 from models.enums import CreatedByRole
 from models.model import App, AppMode, AppModelConfig, Conversation, EndUser, Message, MessageFile
 from services.errors.app_model_config import AppModelConfigBrokenError
-from services.errors.conversation import ConversationCompletedError, ConversationNotExistsError
+from services.errors.conversation import (
+    ConversationCompletedError,
+    ConversationNotExistsError,
+    InvalidConversationIDError,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class MessageBasedAppGenerator(BaseAppGenerator):
+    allow_customized_conversation_id: bool = (
+        True if getenv("ALLOW_CUSTOMIZED_CONVERSATION_ID", "false") == "true" else False
+    )
+
     def _handle_response(
         self,
         application_generate_entity: Union[
@@ -99,10 +108,10 @@ class MessageBasedAppGenerator(BaseAppGenerator):
 
         conversation = db.session.query(Conversation).filter(and_(*conversation_filter)).first()
 
-        if not conversation:
+        if not conversation and self.allow_customized_conversation_id == False:
             raise ConversationNotExistsError()
 
-        if conversation.status != "normal":
+        if conversation and conversation.status != "normal":
             raise ConversationCompletedError()
 
         return conversation
@@ -137,6 +146,7 @@ class MessageBasedAppGenerator(BaseAppGenerator):
             AdvancedChatAppGenerateEntity,
         ],
         conversation: Optional[Conversation] = None,
+        customized_conversation_id: Optional[str] = None,
     ) -> tuple[Conversation, Message]:
         """
         Initialize generate records
@@ -195,9 +205,17 @@ class MessageBasedAppGenerator(BaseAppGenerator):
                 from_end_user_id=end_user_id,
                 from_account_id=account_id,
             )
-
-            db.session.add(conversation)
-            db.session.commit()
+            if (
+                self.allow_customized_conversation_id
+                and customized_conversation_id
+                and len(customized_conversation_id) > 0
+            ):
+                conversation.id = customized_conversation_id
+            try:
+                db.session.add(conversation)
+                db.session.commit()
+            except exc.IntegrityError as e:
+                raise InvalidConversationIDError()
             db.session.refresh(conversation)
         else:
             conversation.updated_at = datetime.now(UTC).replace(tzinfo=None)
