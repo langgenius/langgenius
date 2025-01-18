@@ -1,0 +1,56 @@
+identity:
+  name: qwen_vl
+  author: Aliyun
+  label:
+    en_US: Aliyun qwen vl
+    zh_Hans: 阿里云百炼图文大模型
+description:
+  human:
+    en_US: Aliyun dashscope vl
+    zh_Hans: 阿里云百炼图文大模型
+  llm: Aliyun qwen vl service API.
+parameters:
+  - name: token
+    type: string
+    required: true
+    label:
+      en_US: token
+      zh_Hans: 调用token
+    human_description:
+      en_US: token used for calling
+      zh_Hans: 用于服务调用的token
+    llm_description: token for aliyun bailian vl API service
+    form: llm
+  - name: model_name
+    type: string
+    required: false
+    label:
+      en_US: model name
+      zh_Hans: 调用模型名
+    human_description:
+      en_US: model name, default is qwen-vl-max
+      zh_Hans: 调用模型名, 默认是qwen-vl-max
+    llm_description: token for aliyun multimedia analysis API service
+    form: llm
+  - name: images
+    type: string
+    required: true
+    label:
+      en_US: images
+      zh_Hans: 图像列表
+    human_description:
+      en_US: images, seperated by comma
+      zh_Hans: 图像列表, 以英文逗号做分割
+    llm_description: image list, seperated by comma
+    form: llm
+  - name: text
+    type: string
+    required: true
+    label:
+      en_US: text
+      zh_Hans: 文本内容
+    human_description:
+      en_US: text
+      zh_Hans: 文本内容
+    llm_description: text
+    form: llm
