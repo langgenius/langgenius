@@ -57,6 +57,7 @@ import {
 import I18n from '@/context/i18n'
 import { CollectionType } from '@/app/components/tools/types'
 import { CUSTOM_ITERATION_START_NODE } from '@/app/components/workflow/nodes/iteration-start/constants'
+import { CUSTOM_LOOP_START_NODE } from '@/app/components/workflow/nodes/loop-start/constants'
 import { useWorkflowConfig } from '@/service/use-workflow'
 
 export const useIsChatMode = () => {
@@ -88,7 +89,7 @@ export const useWorkflow = () => {
     const currentNode = nodes.find(node => node.id === nodeId)
 
     if (currentNode?.parentId)
-      startNode = nodes.find(node => node.parentId === currentNode.parentId && node.type === CUSTOM_ITERATION_START_NODE)
+      startNode = nodes.find(node => node.parentId === currentNode.parentId && (node.type === CUSTOM_ITERATION_START_NODE || node.type === CUSTOM_LOOP_START_NODE))
 
     if (!startNode)
       return []
@@ -238,6 +239,15 @@ export const useWorkflow = () => {
     return nodes.filter(node => node.parentId === nodeId)
   }, [store])
 
+  const getLoopNodeChildren = useCallback((nodeId: string) => {
+    const {
+      getNodes,
+    } = store.getState()
+    const nodes = getNodes()
+
+    return nodes.filter(node => node.parentId === nodeId)
+  }, [store])
+
   const isFromStartNode = useCallback((nodeId: string) => {
     const { getNodes } = store.getState()
     const nodes = getNodes()
@@ -279,7 +289,7 @@ export const useWorkflow = () => {
       setNodes(newNodes)
     }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store])
 
   const isVarUsedInNodes = useCallback((varSelector: ValueSelector) => {
@@ -424,6 +434,7 @@ export const useWorkflow = () => {
     getNode,
     getBeforeNodeById,
     getIterationNodeChildren,
+    getLoopNodeChildren,
   }
 }
 
@@ -519,7 +530,7 @@ export const useWorkflowInit = () => {
 
   useEffect(() => {
     handleGetInitialWorkflowData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleFetchPreloadData = useCallback(async () => {
@@ -536,7 +547,7 @@ export const useWorkflowInit = () => {
       workflowStore.getState().setPublishedAt(publishedWorkflow?.created_at)
     }
     catch (e) {
-
+      console.error(e)
     }
   }, [workflowStore, appDetail])
 
@@ -635,5 +646,28 @@ export const useIsNodeInIteration = (iterationId: string) => {
   }, [iterationId, store])
   return {
     isNodeInIteration,
+  }
+}
+
+export const useIsNodeInLoop = (loopId: string) => {
+  const store = useStoreApi()
+
+  const isNodeInLoop = useCallback((nodeId: string) => {
+    const {
+      getNodes,
+    } = store.getState()
+    const nodes = getNodes()
+    const node = nodes.find(node => node.id === nodeId)
+
+    if (!node)
+      return false
+
+    if (node.parentId === loopId)
+      return true
+
+    return false
+  }, [loopId, store])
+  return {
+    isNodeInLoop,
   }
 }
