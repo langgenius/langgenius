@@ -273,8 +273,8 @@ class CompletionAppGenerator(MessageBasedAppGenerator):
         # parse files
         file_extra_config = FileUploadConfigManager.convert(override_model_config_dict)
         if file_extra_config:
-            file_objs = file_factory.build_from_mappings(
-                mappings=message.message_files,
+            file_objs = file_factory.build_from_message_files(
+                message_files=message.message_files,
                 tenant_id=app_model.tenant_id,
                 config=file_extra_config,
             )
